@@ -1,0 +1,171 @@
+#include <assert.h>
+#include <stdlib.h>
+#include "utils.h"
+#include "proc-queue.h"
+
+[[nodiscard]] proc_queue_s *proc_queue_alloc(const uint32_t cap)
+{
+	const uint32_t size = sizeof(proc_queue_s) + sizeof(proc_s*) * cap;
+	return malloc(size);
+}
+
+void proc_queue_free(PROC_QUE_ queue)
+{
+	assert(queue);
+	free(queue);
+}
+
+
+void proc_queue_init(PROC_QUE_ queue, const size_t cap, const proc_queue_mode_e mode)
+{
+	assert(queue);
+	*queue = (proc_queue_s) {
+		.cur = 0,
+		.head = 0,
+		.len = 0,
+		.cap = cap,
+		.mode = mode,
+		// No assignment to .data needed, it's part of the struct allocation
+	};
+}
+
+
+bool proc_queue_isempty(PROC_QUE_ queue)
+{
+	assert(queue);
+	return (0 == queue->len);
+}
+
+bool proc_queue_isfull(PROC_QUE_ queue)
+{
+	assert(queue);
+	return (queue->cap == queue->len);
+}
+
+
+void proc_queue_bubble_up(PROC_QUE_ queue)
+{
+	assert(queue);
+	assert(SORTED_LINEAR == queue->mode);
+
+	if (queue->len <= 1)
+		return; 
+
+	uint32_t index = queue->len - 1;
+	while (index > 0)
+	{
+		uint32_t parent = (index - 1) / 2;
+		if (0 <= proc_cmp(queue->data[index], queue->data[parent]))
+			break;
+
+		_swap(queue->data[index], queue->data[parent]);
+		index = parent;
+	}
+}
+
+void proc_queue_bubble_down(PROC_QUE_ queue)
+{
+	assert(queue);
+	assert(SORTED_LINEAR == queue->mode);
+
+	if (queue->len <= 1)
+		return;
+
+	#define valid_i(i) ((i) < queue->len)
+
+	uint32_t index = 0;
+	while (true)
+	{
+		uint32_t left = index * 2 + 1;
+		uint32_t right = index * 2 + 2;
+		uint32_t min = index;
+
+		if (valid_i(left) && (0 > proc_cmp(queue->data[left], queue->data[min])))
+			min = left;
+
+		if (valid_i(right) && (0 > proc_cmp(queue->data[right], queue->data[min])))
+			min = right;
+
+		if (min == index)
+			break;
+
+		_swap(queue->data[min], queue->data[index]);
+		index = min;
+	}
+
+	#undef valid_i
+}
+
+
+void proc_queue_insert(PROC_QUE_ queue, PROC_ proc)
+{
+	assert(!proc_queue_isfull(queue));
+	assert(proc);
+
+	switch (queue->mode)
+	{
+		case SORTED_LINEAR:
+			assert(0 == queue->head);
+			queue->data[queue->len] = proc;
+			queue->len++;
+			proc_queue_bubble_up(queue);
+			break;
+
+		case UNSORTED_CIRCULAR:
+			const uint32_t pos = (queue->head + queue->len) % queue->cap;
+			queue->data[pos] = proc;
+			queue->len++;
+			break;
+
+		default:
+			unreachable();
+	}
+}
+
+void proc_queue_remove(PROC_QUE_ queue)
+{
+	assert(!proc_queue_isempty(queue));
+
+	switch (queue->mode)
+	{
+		case SORTED_LINEAR:
+			assert(0 == queue->head);
+			_swap(queue->data[0], queue->data[queue->len - 1]);
+			queue->len--;
+			proc_queue_bubble_down(queue);
+			break;
+
+		case UNSORTED_CIRCULAR:
+			queue->head = (queue->head + 1) % queue->cap;
+			queue->len--;
+			if (queue->cur >= queue->len)
+				queue->cur = 0;
+			break;
+
+		default:
+			unreachable();
+	}
+}
+
+
+void proc_queue_incr_cursor(PROC_QUE_ queue)
+{
+	assert(queue);
+	assert(UNSORTED_CIRCULAR == queue->mode);
+	queue->cur = (queue->cur + 1) % queue->len;
+}
+
+
+proc_s *proc_queue_peek(PROC_QUE_ queue)
+{
+	assert(!proc_queue_isempty(queue));
+	return queue->data[queue->head];
+}
+
+proc_s *proc_queue_cursor(PROC_QUE_ queue)
+{
+	assert(!proc_queue_isempty(queue));
+	assert(UNSORTED_CIRCULAR == queue->mode);
+	return queue->data[(queue->head + queue->cur) % queue->cap];
+}
+
