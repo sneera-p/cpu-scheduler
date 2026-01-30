@@ -7,10 +7,6 @@
 
 /* --- TIME SETTINGS (ms) --- */
 
-// aliases to differentiate timestamp from time (defined in utils.h)
-// typedef uint32_t ptimer_t;
-// typedef uint32_t ptime_delta_t;
-
 // time per queue in the short-term scheduler before swapping
 #define TIME_QUANTUM 20'000
 
@@ -20,18 +16,17 @@
 // Estimated overhead time to create & initialize a new process
 #define TIME_PROC_INIT 200
 
-// Estimated overhead time to load a process from long-scheduler to short-scheduler
-#define TIME_PROC_LOAD 50
+// Estimated overhead time to switch process
+#define TIME_PROC_SWITCH 20
 
 
 /* --- PROCESS STATE --- */
 
 #define PSTATE(x) \
-   x(NEW) /* creating / waiting to start running (in LTS) */ \
+   x(NEW) /* creating / waiting to start running */ \
    x(READY) /* ready (in STS) */ \
-   x(RUN) /* running (in CPU) */ \
-   x(IO) /* waiting for I/O */ \
-   x(TERM) /* finished running */
+   x(RUNNING) /* running (in CPU) */ \
+   x(EXIT) /* finished running */
 
 enum pstate : uint8_t
 {
@@ -40,9 +35,9 @@ enum pstate : uint8_t
 };
 
 typedef enum pstate pstate_e;
-static const char *pstate_desc[N_PSTATE] = {
-   PSTATE(X_STR)
-};
+// static const char *pstate_desc[N_PSTATE] = {
+//    PSTATE(X_STR)
+// };
 
 
 /* --- PRIORITY LEVELS --- */
@@ -60,25 +55,10 @@ enum priority : uint8_t
 };
 
 typedef enum priority priority_e;
-static const char *priority_desc[N_PRIORITY] = {
-	PRIORITY(X_STR)
-};
+// static const char *priority_desc[N_PRIORITY] = {
+// 	PRIORITY(X_STR)
+// };
 
-
-/* --- QUEUE CAPACITY LIMITS --- */
-
-#define Q0_NPROC 32
-#define Q1_NPROC 128
-#define Q2_NPROC 512
-#define Q3_NPROC 2048
-
-// Maximum number of processes allowed in each queue
-static const uint32_t NPROC[N_PRIORITY] = {
-   [Q0] = Q0_NPROC, 
-   [Q1] = Q1_NPROC, 
-   [Q2] = Q2_NPROC, 
-   [Q3] = Q3_NPROC,
-};
 
 
 /* --- SANITY CHECKS --- */

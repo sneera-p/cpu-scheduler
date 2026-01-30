@@ -3,58 +3,35 @@
 #include "utils.h"
 #include "proc.h"
 
-[[nodiscard]] inline bool proc_is_complete(PROC_ proc) [[reproducible]]
-{
-	assert(proc);
-	return (0 == proc->remaining_time);
-}
-
-[[nodiscard]] inline bool proc_is_started(PROC_ proc) [[reproducible]]
-{
-	assert(proc);
-	return (0 != proc->first_run_at);
-}
-
-[[nodiscard]] inline bool proc_is_loaded(PROC_ proc) [[reproducible]]
-{
-	assert(proc);
-	return (0 != proc->load_at);
-}
-
-[[nodiscard]] inline bool proc_is_dormant(PROC_ proc) [[reproducible]]
-{
-	assert(proc);
-	return ((0 == proc->first_run_at) && (0 == proc->load_at));
-}
 
 [[nodiscard]] inline ptimer_t proc_completion_time(PROC_ proc) [[reproducible]]
 {
-	assert(proc_is_complete(proc));
-	return proc->last_run_at;
+	assert(proc && proc->state == EXIT);
+	return proc->last_exec;
 }
 
 [[nodiscard]] inline ptime_delta_t proc_turnaround_time(PROC_ proc) [[reproducible]]
 {
-	assert(proc_is_complete(proc));
-	return (proc->last_run_at - proc->arrival_time);
+	assert(proc && proc->state == EXIT);
+	return (proc->last_exec - proc->arrival_time);
 }
 
 [[nodiscard]] inline ptime_delta_t proc_active_time(PROC_ proc) [[reproducible]]
 {
-	assert(proc_is_started(proc));
-	return (proc->last_run_at - proc->arrival_time);
+	assert(proc && proc->last_exec != 0);
+	return (proc->last_exec - proc->arrival_time);
 }
 
 [[nodiscard]] inline ptime_delta_t proc_response_time(PROC_ proc) [[reproducible]]
 {
-	assert(proc_is_started(proc));
-    return (proc->first_run_at - proc->arrival_time);
+	assert(proc && proc->last_exec != 0);
+    return (proc->first_exec - proc->arrival_time);
 }
 
 [[nodiscard]] inline ptime_delta_t proc_work_done(PROC_ proc) [[reproducible]]
 {
 	assert(proc);
-	return (proc->burst_time - proc->remaining_time);
+	return (proc->cpu_total - proc->cpu_remaining);
 }
 
 [[nodiscard]] inline ptime_delta_t proc_wait_time(PROC_ proc) [[reproducible]]
@@ -68,61 +45,56 @@ int64_t proc_cmp(const PROC_ proc1, const PROC_ proc2)
 	assert(proc1);
 	assert(proc2);
 
-	if (proc1->remaining_time != proc2->remaining_time)
-		return proc1->remaining_time - proc2->remaining_time;
+	if (proc1->cpu_remaining != proc2->cpu_remaining)
+		return proc1->cpu_remaining - proc2->cpu_remaining;
 	else
 		return proc1->arrival_time - proc2->arrival_time;
 }
 
-ptimer_t proc_init(PROC_ proc, const ptimer_t timer, const ptime_delta_t burst_time, const priority_e priority)
+ptimer_t proc_init(PROC_ proc, const ptimer_t timer, const ptime_delta_t cpu_total, const priority_e priority)
 {
 	static uint32_t pid_counter = 1;
 
 	assert(proc);
-	assert(burst_time > 0);
+	assert(cpu_total > 0);
 
 	*proc = (proc_s) {
-		.pid = pid_counter,
-		.burst_time = burst_time,
-		.arrival_time = timer,
+		.cpu_remaining = cpu_total,
+		.first_exec = 0,
+		.last_exec = 0,
+		.state = NEW,
 		.priority = priority,
-		.load_at = 0,
-		.remaining_time = burst_time,
-		.first_run_at = 0,
-		.last_run_at = 0,
+		.pid = pid_counter,
+		.cpu_total = cpu_total,
+		.arrival_time = timer,
 	};
 
 	pid_counter++;
 	return timer + TIME_PROC_INIT;
 }
 
-ptimer_t proc_load(PROC_ proc, const ptimer_t timer)
-{
-	assert(proc_is_dormant(proc));
-	proc->load_at = timer;
-	return timer + TIME_PROC_LOAD;
-}
-
 
 ptimer_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_duration)
 {
-	assert(proc_is_loaded(proc));
+	assert(proc && proc->state == READY);
 	assert(slice_duration > 0);
 
 	// the very first time process runs
-   if (0 == proc->first_run_at)
-      proc->first_run_at = timer;
+   if (0 == proc->first_exec)
+      proc->first_exec = timer;
 
-	ptime_delta_t work_done = min(proc->remaining_time, slice_duration);
+	ptime_delta_t work_done = min(proc->cpu_remaining, slice_duration);
 
-	proc->remaining_time -= work_done;
-	proc->last_run_at = timer + work_done;
+	proc->cpu_remaining -= work_done;
+	proc->last_exec = timer + work_done;
 
-	return proc->last_run_at;
+	// process exit (termination)
+	if (0 == proc->cpu_remaining)
+		proc->state = EXIT;
+
+	return proc->last_exec;
 }
 
-// #define IND "   "
-// #define IND2 IND IND
 
 // #ifndef __TOML__IMPL
 // 	#define __TOML__IMPL

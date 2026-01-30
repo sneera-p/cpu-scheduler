@@ -20,7 +20,6 @@ void proc_queue_init(PROC_QUE_ queue, const size_t cap, const proc_queue_mode_e 
 {
 	assert(queue);
 	*queue = (proc_queue_s) {
-		.cur = 0,
 		.head = 0,
 		.len = 0,
 		.cap = cap,
@@ -138,8 +137,6 @@ void proc_queue_remove(PROC_QUE_ queue)
 		case UNSORTED_CIRCULAR:
 			queue->head = (queue->head + 1) % queue->cap;
 			queue->len--;
-			if (queue->cur >= queue->len)
-				queue->cur = 0;
 			break;
 
 		default:
@@ -148,24 +145,8 @@ void proc_queue_remove(PROC_QUE_ queue)
 }
 
 
-void proc_queue_incr_cursor(PROC_QUE_ queue)
-{
-	assert(queue);
-	assert(UNSORTED_CIRCULAR == queue->mode);
-	queue->cur = (queue->cur + 1) % queue->len;
-}
-
-
 proc_s *proc_queue_peek(PROC_QUE_ queue)
 {
 	assert(!proc_queue_isempty(queue));
 	return queue->data[queue->head];
 }
-
-proc_s *proc_queue_cursor(PROC_QUE_ queue)
-{
-	assert(!proc_queue_isempty(queue));
-	assert(UNSORTED_CIRCULAR == queue->mode);
-	return queue->data[(queue->head + queue->cur) % queue->cap];
-}
-

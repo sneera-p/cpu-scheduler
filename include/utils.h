@@ -3,15 +3,27 @@
 
 #include <stdint.h>
 
+/* --- indentation --- */
+
+#define IND "   "
+#define IND2 IND IND
+#define IND3 IND2 IND
+#define IND4 IND3 IND
+
+
+
 /* --- x macro --- */
 
 #define X_STR(elem) #elem,
 #define X_ENUM(elem) elem,
 
 
+
 /* --- aliases for timestamp vs. time --- */
+
 typedef uint32_t ptimer_t;
 typedef uint32_t ptime_delta_t;
+
 
 
 /* --- max / min --- */
@@ -35,18 +47,21 @@ typedef uint32_t ptime_delta_t;
    _max_##type(a, b)
 
 
-
 _GENERATE_MIN_MAX(uint32_t)
+_GENERATE_MIN_MAX(uint64_t)
 // _GENERATE_MIN_MAX(ptimer_t)
 // _GENERATE_MIN_MAX(ptime_delta_t)
 
 #define min(a, b) _Generic((a) + (b), \
-   uint32_t: _min_uint32_t \
+   uint32_t: _min_uint32_t, \
+   uint64_t: _min_uint64_t \
 )(a, b)
 
 #define max(a, b) _Generic((a) + (b), \
-   uint32_t: _max_uint32_t \
+   uint32_t: _max_uint32_t, \
+   uint64_t: _max_uint64_t \
 )(a, b)
+
 
 
 /* --- swap --- */
