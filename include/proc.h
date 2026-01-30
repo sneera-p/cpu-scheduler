@@ -18,27 +18,21 @@
 struct proc
 {
    /* --- EXECUTION STATE --- */
-   ptime_delta_t remaining_time; // CPU time still needed to finish
-   ptimer_t first_run_at;        // Timestamp of the first execution
-   ptimer_t last_run_at;         // Timestamp of the most recent execution
-
-   /* --- LOAD STATE --- */
-   ptimer_t load_at;         // Timestamp the process was loaded to short-term-scheduler
+   ptime_delta_t cpu_remaining;  // CPU time still needed to finish
+   ptimer_t first_exec;          // Timestamp of the first execution
+   ptimer_t last_exec;           // Timestamp of the most recent execution
+   pstate_e state;
 
    /* --- INITIALIZATION DATA --- */
-   uint32_t pid;            // Unique Process Identifier
-   ptime_delta_t burst_time; // Total CPU time requested
-   ptimer_t arrival_time;    // Timestamp when process entered the system (long-term-scheduler)
    priority_e priority;     // Target queue (Q0–Q3) based on task type
+   uint32_t pid;            // Unique Process Identifier
+   ptime_delta_t cpu_total; // Total CPU time requested
+   ptimer_t arrival_time;   // Timestamp when process entered the system (long-term-scheduler)
 };
 
 typedef struct proc proc_s;
 typedef proc_s *const restrict PROC_;
 
-extern bool proc_is_complete(PROC_ proc);
-extern bool proc_is_started(PROC_ proc);
-extern bool proc_is_loaded(PROC_ proc);
-extern bool proc_is_dormant(PROC_ proc);
 extern ptimer_t proc_completion_time(PROC_ proc);
 extern ptime_delta_t proc_turnaround_time(PROC_ proc);
 extern ptime_delta_t proc_active_time(PROC_ proc);
@@ -49,10 +43,7 @@ extern ptime_delta_t proc_wait_time(PROC_ proc);
 [[nodiscard]] int64_t proc_cmp(const PROC_ proc1, const PROC_ proc2) [[reproducible]];
 
 // Initializes a process struct and returns the time taken for creation
-[[nodiscard]] ptimer_t proc_init(PROC_ proc, const ptimer_t timer, const ptime_delta_t burst_time, const priority_e priority) [[reproducible]];
-
-// Loads the process (emulates it) as it moves from dormant to running
-[[nodiscard]] ptimer_t proc_load(PROC_ proc, const ptimer_t timer);
+[[nodiscard]] ptimer_t proc_init(PROC_ proc, const ptimer_t timer, const ptime_delta_t cpu_total, const priority_e priority) [[reproducible]];
 
 // Runs the process for a given duration. Returns the updated global timer.
 [[nodiscard]] ptimer_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_duration);

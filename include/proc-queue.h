@@ -16,7 +16,6 @@ typedef enum proc_queue_mode proc_queue_mode_e;
 
 struct proc_queue
 {
-	uint32_t cur; // offset from head (for RR)
 	uint32_t head; // Circular queue head
 	uint32_t len;
 	uint32_t cap;
@@ -45,22 +44,8 @@ void proc_queue_bubble_down(PROC_QUE_ queue) [[reproducible]];
 void proc_queue_insert(PROC_QUE_ queue, PROC_ proc);
 void proc_queue_remove(PROC_QUE_ queue);
 
-// cursor 
-void proc_queue_incr_cursor(PROC_QUE_ queue);
-
 // view
 [[nodiscard]] proc_s *proc_queue_peek(PROC_QUE_ queue) [[reproducible]];
-[[nodiscard]] proc_s *proc_queue_cursor(PROC_QUE_ queue) [[reproducible]];
-
-// Combo macros
-#define proc_queue_insert_sorted(queue, proc) ( \
-	proc_queue_insert(queue, proc), \
-	proc_queue_bubble_up(queue) \
-)
-#define proc_queue_remove_sorted(queue) ( \
-	proc_queue_remove(queue), \
-	proc_queue_bubble_down(queue) \
-)
 
 
 #endif /* __PROC_QUEUE__H */
