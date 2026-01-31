@@ -55,13 +55,29 @@ enum priority : uint8_t
 };
 
 typedef enum priority priority_e;
-// static const char *priority_desc[N_PRIORITY] = {
-// 	PRIORITY(X_STR)
-// };
+static const char *priority_desc[N_PRIORITY] = {
+	PRIORITY(X_STR)
+};
 
 
 
 /* --- SANITY CHECKS --- */
+
+#ifndef TIME_QUANTUM
+   #error "TIME_QUANTUM must be defined to switch process"
+#endif
+
+#ifndef Q0_TIME_QUANTUM
+   #error "Q0_TIME_QUANTUM must be defined to switch RR queues"
+#endif
+
+#ifndef TIME_PROC_INIT
+   #error "TIME_PROC_INIT must be defined to avoid process arrival_time collisions"
+#endif
+
+#ifndef TIME_PROC_SWITCH
+   #error "TIME_PROC_SWITCH must be defined"
+#endif
 
 // Ensures the Round Robin slices fit perfectly into the 20s window
 static_assert(TIME_QUANTUM % Q0_TIME_QUANTUM == 0, "Q0 slice must divide evenly into total window");
