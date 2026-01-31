@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
+#include "pcg/pcg_basic.h"
 #include "utils.h"
 #include "proc.h"
-
 
 [[nodiscard]] inline ptimer_t proc_completion_time(PROC_ proc) [[reproducible]]
 {
@@ -51,30 +51,37 @@ int64_t proc_cmp(const PROC_ proc1, const PROC_ proc2)
 		return proc1->arrival_time - proc2->arrival_time;
 }
 
-ptimer_t proc_init(PROC_ proc, const ptimer_t timer, const ptime_delta_t cpu_total, const priority_e priority)
+ptime_delta_t proc_init(PROC_ proc, const ptimer_t timer, const priority_e priority)
 {
 	static uint32_t pid_counter = 1;
+	static pcg32_random_t proc_rng;
+
+	// Seed RNG on first call
+	if (pid_counter == 1)
+		pcg32_srandom_r(&proc_rng, (uint64_t)&pid_counter, (uint64_t)&proc_rng);
 
 	assert(proc);
-	assert(cpu_total > 0);
+	uint32_t cpu_time = pcg32_boundedrand_r(&proc_rng, (1ul << 27)) + (1ul << 7);
 
 	*proc = (proc_s) {
-		.cpu_remaining = cpu_total,
+   	// execution state
+		.cpu_remaining = cpu_time,
 		.first_exec = 0,
 		.last_exec = 0,
 		.state = NEW,
+   	// initialization state
 		.priority = priority,
 		.pid = pid_counter,
-		.cpu_total = cpu_total,
+		.cpu_total = cpu_time,
 		.arrival_time = timer,
 	};
 
 	pid_counter++;
-	return timer + TIME_PROC_INIT;
+	return TIME_PROC_INIT;
 }
 
 
-ptimer_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_duration)
+ptime_delta_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_duration)
 {
 	assert(proc && proc->state == READY);
 	assert(slice_duration > 0);
@@ -92,141 +99,5 @@ ptimer_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_du
 	if (0 == proc->cpu_remaining)
 		proc->state = EXIT;
 
-	return proc->last_exec;
+	return work_done;
 }
-
-
-// #ifndef __TOML__IMPL
-// 	#define __TOML__IMPL
-// 	#include <toml-c.h>
-// #endif /* __TOML__IMPL */
-
-// [[nodiscard]] static inline size_t parse_ulen(char *restrict s) [[reproducible]]
-// {
-// 	assert(s);
-// 	while(' ' == *s || '\t' == *s)
-// 		s++; // skip whitespace / tabs
-
-// 	size_t v = 0;
-//    for (; *s >= '0' && *s <= '9'; s++)
-//       v = v * 10 + (*s - '0');
-
-//    if (0 == v)
-//    	strcpy(s, "Error: Length must be a number greater than 0\n");
-//    return v;
-// }
-
-// [[nodiscard]] static inline priority_e parse_priority(char *restrict s) [[reproducible]]
-// {
-// 	assert(s);
-// 	while(' ' == *s || '\t' == *s)
-// 		s++; // skip whitespace / tabs
-   
-// 	priority_e v = 0;
-//    for (; *s >= '0' && *s <= '9'; s++)
-//       v = v * 10 + (*s - '0');
-
-//    if (v < N_PRIORITY)
-//    	return v;
-
-//    strcpy(s, "Error: Invalid priority\n");
-//    return N_PRIORITY;
-// }
-
-// proc_arr_s parse_procs_stdin(void)
-// {
-// 	proc_s *restrict procs = nullptr;
-// 	char buf[256];
-// 	buf[0] = '\0';
-
-// 	fputs("Enter process count: ", stdout);
-// 	if (nullptr == fgets(buf, sizeof(buf), stdin))
-// 		goto read_fail;
-
-// 	const size_t len = parse_ulen(buf);
-// 	if (0 == len)
-// 		goto return_empty;
-
-// 	procs = (proc_s*)aligned_alloc(alignof(proc_s), sizeof(proc_s) * len);
-
-// 	fputs("Enter process data:\n", stdout);
-// 	for (size_t i = 0; i < len; i++)
-// 	{
-// 		printf(IND "Process %zu:\n", i);
-
-// 		uint32_t time = 0;
-// 		while (0 == time)
-// 		{
-// 			fputs(IND2 "Burst time: ", stdout);
-// 			if (nullptr == fgets(buf, sizeof(buf), stdin))
-// 				goto read_fail;
-// 			time = parse_ulen(buf);
-// 		}
-
-// 		priority_e priority = N_PRIORITY;
-// 		while (N_PRIORITY == priority)
-// 		{
-// 			fputs(IND2 "Priority: ", stdout);
-// 			if (nullptr == fgets(buf, sizeof(buf), stdin))
-// 				goto read_fail;
-// 			priority = parse_priority(buf);
-// 		}
-
-// 		TIMER_ t = proc_init(&procs[i], i * TIME_PROC_INIT, time, priority);
-// 		assert(t == (i + 1) * TIME_PROC_INIT);
-// 	}
-// 	return proc_arr_create(procs, len);
-
-// read_fail:
-// 	fputs("Error: file read failed\n", stderr);
-// 	if (nullptr != procs)
-// 		free(procs);	
-// return_empty:
-// 	fputs(buf, stderr);
-// 	return proc_arr_create(nullptr, 0);
-// }
-
-
-// proc_arr_s parse_procs_toml(FILE *const restrict file)
-// {
-// 	assert(file);
-// 	char errbuf[256];
-// 	errbuf[0] = '\0';
-
-// 	toml_table_t *const table = toml_parse_file(file, errbuf, sizeof(errbuf));
-// 	if (nullptr == table)
-// 		goto return_empty;
-
-// 	const toml_array_t *const toml_procs = toml_table_array(table, "tasks");
-// 	if (nullptr == toml_procs)
-// 		goto no_tasks;
-
-// 	const size_t len = toml_array_len(toml_procs);
-// 	proc_s *const restrict procs = (proc_s*)aligned_alloc(alignof(proc_s), sizeof(proc_s) * len);
-
-// 	for (size_t i = 0; i < len; ++i)
-// 	{
-// 		const toml_table_t *const toml_proc = toml_array_table(toml_procs, i);
-// 		if (nullptr == toml_proc)
-// 			continue;
-
-// 		toml_value_t v_prio = toml_table_int(toml_proc, "priority");
-// 		toml_value_t v_time = toml_table_int(toml_proc, "time");
-
-// 		if (!v_prio.ok || !v_time.ok)
-// 		   continue; 
-
-// 		TIMER_ t = proc_init(&procs[i], i * TIME_PROC_INIT, (uint32_t)v_time.u.i, (priority_e)v_prio.u.i);
-// 		assert(t == (i + 1) * TIME_PROC_INIT);
-// 	}
-
-// 	toml_free(table);
-// 	return proc_arr_create(procs, len);
-
-// no_tasks:
-// 	strcpy(errbuf, "No tasks available\n");
-// return_empty:
-// 	fputs(errbuf, stderr);
-// 	toml_free(table);
-// 	return proc_arr_create(nullptr, 0);
-// }

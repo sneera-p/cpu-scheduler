@@ -3,10 +3,32 @@
 #include "utils.h"
 #include "proc-queue.h"
 
-[[nodiscard]] proc_queue_s *proc_queue_alloc(const uint32_t cap)
+
+proc_queue_s *proc_queue_alloc(const uint32_t cap)
 {
-	const uint32_t size = sizeof(proc_queue_s) + sizeof(proc_s*) * cap;
-	return malloc(size);
+	assert(cap > 0);
+	const size_t size = sizeof(proc_queue_s) + sizeof(proc_s*) * cap;
+
+	void *tmp = malloc(size);
+	if (tmp == nullptr)
+		exit(EXIT_FAILURE);
+
+	return tmp;
+}
+
+proc_queue_s *proc_queue_grow(PROC_QUE_ queue)
+{
+	assert(queue);
+
+	const size_t cap = queue->cap * 3 / 2;
+	const size_t size = sizeof(proc_queue_s) + sizeof(proc_s*) * cap;
+
+	PROC_QUE_ tmp = realloc(queue, size);
+	if (tmp == nullptr)
+		exit(EXIT_FAILURE);
+
+	tmp->cap = cap;
+	return tmp;
 }
 
 void proc_queue_free(PROC_QUE_ queue)
@@ -95,25 +117,37 @@ void proc_queue_bubble_down(PROC_QUE_ queue)
 	#undef valid_i
 }
 
-
-void proc_queue_insert(PROC_QUE_ queue, PROC_ proc)
+void proc_queue_insert_back(PROC_QUE_ queue, PROC_ proc)
 {
 	assert(!proc_queue_isfull(queue));
 	assert(proc);
+	const uint32_t pos = (queue->head + queue->len) % queue->cap;
+	queue->data[pos] = proc;
+	queue->len++;
+}
 
+void proc_queue_insert_sorted(PROC_QUE_ queue, PROC_ proc)
+{
+	assert(!proc_queue_isfull(queue));
+	assert(proc);
+	assert(0 == queue->head);
+	queue->data[queue->len] = proc;
+	queue->len++;
+	proc_queue_bubble_up(queue);
+}
+
+
+void proc_queue_insert(PROC_QUE_ queue, PROC_ proc)
+{
+	assert(queue);
 	switch (queue->mode)
 	{
 		case SORTED_LINEAR:
-			assert(0 == queue->head);
-			queue->data[queue->len] = proc;
-			queue->len++;
-			proc_queue_bubble_up(queue);
+			proc_queue_insert_sorted(queue, proc);
 			break;
 
 		case UNSORTED_CIRCULAR:
-			const uint32_t pos = (queue->head + queue->len) % queue->cap;
-			queue->data[pos] = proc;
-			queue->len++;
+			proc_queue_insert_back(queue, proc);
 			break;
 
 		default:
@@ -121,22 +155,33 @@ void proc_queue_insert(PROC_QUE_ queue, PROC_ proc)
 	}
 }
 
-void proc_queue_remove(PROC_QUE_ queue)
+void proc_queue_remove_head(PROC_QUE_ queue)
 {
 	assert(!proc_queue_isempty(queue));
+	queue->head = (queue->head + 1) % queue->cap;
+	queue->len--;
+}
 
+void proc_queue_remove_sorted(PROC_QUE_ queue)
+{
+	assert(!proc_queue_isempty(queue));
+	assert(0 == queue->head);
+	_swap(queue->data[0], queue->data[queue->len - 1]);
+	queue->len--;
+	proc_queue_bubble_down(queue);
+}
+
+void proc_queue_remove(PROC_QUE_ queue)
+{
+	assert(queue);
 	switch (queue->mode)
 	{
 		case SORTED_LINEAR:
-			assert(0 == queue->head);
-			_swap(queue->data[0], queue->data[queue->len - 1]);
-			queue->len--;
-			proc_queue_bubble_down(queue);
+			proc_queue_remove_sorted(queue);
 			break;
 
 		case UNSORTED_CIRCULAR:
-			queue->head = (queue->head + 1) % queue->cap;
-			queue->len--;
+			proc_queue_remove_head(queue);
 			break;
 
 		default:
@@ -149,4 +194,16 @@ proc_s *proc_queue_peek(PROC_QUE_ queue)
 {
 	assert(!proc_queue_isempty(queue));
 	return queue->data[queue->head];
+}
+
+void proc_queue_rotate(PROC_QUE_ queue)
+{
+   assert(queue->mode == UNSORTED_CIRCULAR);
+   
+   if (queue->len <= 1) 
+   	return;
+
+   PROC_ tmp = proc_queue_peek(queue);
+   proc_queue_remove(queue);
+   proc_queue_insert(queue, tmp);
 }

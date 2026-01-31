@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "tomlc/tomlc17.h"
 #include "proc.h"
 
 enum proc_queue_mode : uint8_t
@@ -28,6 +29,7 @@ typedef proc_queue_s *const restrict PROC_QUE_;
 
 // Allocation
 [[nodiscard]] proc_queue_s *proc_queue_alloc(const uint32_t cap);
+[[nodiscard]] proc_queue_s *proc_queue_grow(PROC_QUE_ queue);
 void proc_queue_free(PROC_QUE_ queue);
 
 // Initialises a process queue
@@ -40,12 +42,21 @@ void proc_queue_init(PROC_QUE_ queue, const size_t cap, const proc_queue_mode_e 
 void proc_queue_bubble_up(PROC_QUE_ queue) [[reproducible]];
 void proc_queue_bubble_down(PROC_QUE_ queue) [[reproducible]];
 
-// queue insert/remove
-void proc_queue_insert(PROC_QUE_ queue, PROC_ proc);
-void proc_queue_remove(PROC_QUE_ queue);
+// queue insert
+void proc_queue_insert_back(PROC_QUE_ queue, PROC_ proc);
+void proc_queue_insert_sorted(PROC_QUE_ queue, PROC_ proc);
+void proc_queue_insert(PROC_QUE_ queue, PROC_ proc); // generic
+
+// queue remove
+void proc_queue_remove_head(PROC_QUE_ queue);
+void proc_queue_remove_sorted(PROC_QUE_ queue);
+void proc_queue_remove(PROC_QUE_ queue); // generic
 
 // view
 [[nodiscard]] proc_s *proc_queue_peek(PROC_QUE_ queue) [[reproducible]];
+
+// rotate (for RR)
+void proc_queue_rotate(PROC_QUE_ queue);
 
 
 #endif /* __PROC_QUEUE__H */

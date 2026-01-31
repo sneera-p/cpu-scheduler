@@ -43,10 +43,10 @@ extern ptime_delta_t proc_wait_time(PROC_ proc);
 [[nodiscard]] int64_t proc_cmp(const PROC_ proc1, const PROC_ proc2) [[reproducible]];
 
 // Initializes a process struct and returns the time taken for creation
-[[nodiscard]] ptimer_t proc_init(PROC_ proc, const ptimer_t timer, const ptime_delta_t cpu_total, const priority_e priority) [[reproducible]];
+[[nodiscard]] ptime_delta_t proc_init(PROC_ proc, const ptimer_t timer, const priority_e priority) [[reproducible]];
 
-// Runs the process for a given duration. Returns the updated global timer.
-[[nodiscard]] ptimer_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_duration);
+// Runs the process for a given duration. Returns the the time taken.
+[[nodiscard]] ptime_delta_t proc_run(PROC_ proc, const ptimer_t timer, const ptime_delta_t slice_duration);
 
 
 /* --- SANITY CHECKS --- */

@@ -55,9 +55,9 @@ enum priority : uint8_t
 };
 
 typedef enum priority priority_e;
-// static const char *priority_desc[N_PRIORITY] = {
-// 	PRIORITY(X_STR)
-// };
+static const char *priority_desc[N_PRIORITY] = {
+	PRIORITY(X_STR)
+};
 
 
 
