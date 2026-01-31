@@ -9,6 +9,11 @@ $(TMP_DIR) $(BIN_DIR):
 	mkdir -p $@
 
 
+### utils ###
+
+UTILS_DIR = lib/utils
+
+
 ### pcg-basic ###
 
 PCG_DIR = lib/pcg
