@@ -1,6 +1,6 @@
 CC = gcc
 CSTD = c23
-FLAGS = -Wall -Wextra -Wpedantic -Werror -MMD -MP -O2 -flto -mavx2 -mfma -march=native
+FLAGS = -Wall -Wextra -Wpedantic -MMD -MP -O2 -flto -mavx2 -mfma -march=native
 
 BIN_DIR = bin
 TMP_DIR = .tmp
