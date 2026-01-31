@@ -1,8 +1,7 @@
-#ifndef __CONFIG__H
-#define __CONFIG__H
+#ifndef SCHEDULER__CONFIG__H
+#define SCHEDULER__CONFIG__H
 
-#include <stdint.h>
-#include "utils.h"
+#include "utils/xmacro.h"
 
 
 /* --- TIME SETTINGS (ms) --- */
@@ -20,24 +19,29 @@
 #define TIME_PROC_SWITCH 20
 
 
+// indentation gap for stdout
+#define IND "   "
+#define IND2 IND IND
+#define IND3 IND2 IND
+#define IND4 IND3 IND
+
+
 /* --- PROCESS STATE --- */
 
-#define PSTATE(x) \
+#define PROC_STATE(x) \
    x(NEW) /* creating / waiting to start running */ \
    x(READY) /* ready (in STS) */ \
-   x(RUNNING) /* running (in CPU) */ \
+   x(RUNNING) /* running (started running) */ \
    x(EXIT) /* finished running */
 
-enum pstate : uint8_t
+enum proc_state : uint8_t
 {
-   PSTATE(X_ENUM) 
-   N_PSTATE
+   PROC_STATE(X_ENUM) 
+   N_PROC_STATE
 };
 
-typedef enum pstate pstate_e;
-// static const char *pstate_desc[N_PSTATE] = {
-//    PSTATE(X_STR)
-// };
+typedef enum proc_state proc_state_e;
+extern const char *proc_state_desc[N_PROC_STATE];
 
 
 /* --- PRIORITY LEVELS --- */
@@ -55,9 +59,7 @@ enum priority : uint8_t
 };
 
 typedef enum priority priority_e;
-static const char *priority_desc[N_PRIORITY] = {
-	PRIORITY(X_STR)
-};
+extern const char *priority_desc[N_PRIORITY];
 
 
 
@@ -86,4 +88,4 @@ static_assert(TIME_QUANTUM % Q0_TIME_QUANTUM == 0, "Q0 slice must divide evenly 
 static_assert(TIME_PROC_INIT != 0, "proocess initialization cost cannot be 0");
 
 
-#endif /* __CONFIG__H */
+#endif /* SCHEDULER__CONFIG__H */

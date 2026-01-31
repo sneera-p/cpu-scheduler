@@ -9,6 +9,11 @@ $(TMP_DIR) $(BIN_DIR):
 	mkdir -p $@
 
 
+### utils ###
+
+UTILS_DIR = lib/utils
+
+
 ### pcg-basic ###
 
 PCG_DIR = lib/pcg
@@ -25,21 +30,6 @@ $(PCG_LIB): $(PCG_OBJS)
 	ar rcs $@ $^
 
 
-### tomlc17 ###
-
-TOML_DIR = lib/tomlc
-TOML_LIB = $(TMP_DIR)/tomlc.a
-TOML_EXT = toml-
-
-TOML_SRCS := $(wildcard $(TOML_DIR)/*.c)
-TOML_OBJS := $(patsubst $(TOML_DIR)/%.c, $(TMP_DIR)/$(TOML_EXT)%.o, $(TOML_SRCS))
-
-$(TOML_OBJS): $(TMP_DIR)/$(TOML_EXT)%.o : $(TOML_DIR)/%.c | $(TMP_DIR)
-	$(CC) -std=$(CSTD) $(FLAGS) -I./$(TOML_DIR) -c $< -o $@
-
-$(TOML_LIB): $(TOML_OBJS)
-	ar rcs $@ $^
-
 
 ### target ###
 
@@ -48,7 +38,7 @@ SRC_DIR = src
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c, $(TMP_DIR)/%.o, $(SRCS))
-LIBS = $(TOML_LIB) $(PCG_LIB)
+LIBS = $(PCG_LIB)
 
 DEPS := $(OBJS:.o=.d)
 TARGET = $(BIN_DIR)/exe
