@@ -31,7 +31,7 @@
 #define PROC_STATE(x) \
    x(NEW) /* creating / waiting to start running */ \
    x(READY) /* ready (in STS) */ \
-   x(RUNNING) /* running (in CPU) */ \
+   x(RUNNING) /* running (started running) */ \
    x(EXIT) /* finished running */
 
 enum proc_state : uint8_t
@@ -41,9 +41,7 @@ enum proc_state : uint8_t
 };
 
 typedef enum proc_state proc_state_e;
-static const char *proc_state_desc[N_PROC_STATE] = {
-   PROC_STATE(X_DESC)
-};
+extern const char *proc_state_desc[N_PROC_STATE];
 
 
 /* --- PRIORITY LEVELS --- */
@@ -61,9 +59,7 @@ enum priority : uint8_t
 };
 
 typedef enum priority priority_e;
-static const char *priority_desc[N_PRIORITY] = {
-   PRIORITY(X_DESC)
-};
+extern const char *priority_desc[N_PRIORITY];
 
 
 
