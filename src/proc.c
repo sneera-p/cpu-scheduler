@@ -55,7 +55,7 @@ const char *priority_desc[N_PRIORITY] = {
 
 
 
-int64_t proc_cmp(const PROC_ proc1, const PROC_ proc2)
+int8_t proc_cmp(const PROC_ proc1, const PROC_ proc2)
 {
    assert(proc1);
    assert(proc2);
@@ -128,7 +128,10 @@ void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
 
    // process exit (termination)
    if (proc->cpu_remaining == 0)
+   {
       proc->state = EXIT;
+      // *timer += TIME_PROC_INIT;
+   }
 }
 
 

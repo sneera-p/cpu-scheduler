@@ -35,7 +35,7 @@ extern ms_delta_s proc_wait_time(PROC_ proc);
 //    -1: less than
 //    0: equal,
 //    1: greater than
-[[nodiscard]] int64_t proc_cmp(const PROC_ proc1, const PROC_ proc2) [[reproducible]];
+[[nodiscard]] int8_t proc_cmp(const PROC_ proc1, const PROC_ proc2) [[reproducible]];
 
 // Initializes a process struct and returns the time taken for creation
 void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority);
