@@ -66,7 +66,8 @@ void test()
 
    linear_alloc_delete(allocator);
 
-   const priority_e p = input_priority_stdin(1, IND "Enter process %u priority: ");
+
+   const priority_e p = input_priority_stdin(IND "Enter process 1 priority: ");
    printf("%s\n", priority_desc[p]);
 }
 

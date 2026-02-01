@@ -34,7 +34,7 @@
    return v;
 }
 
-[[nodiscard]] static inline priority_e input_priority_stdin(const uint32_t pid, const char *const msg)
+[[nodiscard]] static inline priority_e input_priority_stdin(const char *const msg)
 {
    char buf[16];
    priority_e v = 0;
@@ -42,8 +42,7 @@
 
    while (true)
    {
-      // fputs(IND msg, stdout);
-      printf(msg, pid);
+      fputs(msg, stdout);
       if (!fgets(buf, sizeof(buf), stdin))
       {
          fputs("Error: read failed\n", stderr);
