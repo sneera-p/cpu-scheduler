@@ -3,42 +3,11 @@
 #include <stdlib.h>
 #include "utils/minmax.h"
 #include "utils/swap.h"
+#include "input.h"
 #include "ms-time.h"
 #include "config.h"
 #include "proc.h"
 #include "linear-alloc.h"
-
-
-[[nodiscard]] size_t input_size_stdin()
-{
-   char buf[16];
-   fputs("Enter no of processes: ", stdout);
-
-   if (!fgets(buf, sizeof(buf), stdin))
-   {
-      fputs("Error: read failed\n", stderr);
-      exit(EXIT_FAILURE); /* !--EXIT--! */
-   }
-
-   const char *restrict s = buf;
-   size_t v = 0;
-
-   /* skip whitespace */
-   while (*s == ' ' || *s == '\t')
-      s++;
-
-   /* parse */
-   for (; *s >= '0' && *s <= '9'; s++)
-      v = v * 10 + (*s - '0');
-
-   if (v == 0)
-   {
-      fputs("Error: input size invalid\n", stderr);
-      exit(EXIT_FAILURE); /* !--EXIT--! */
-   }
-
-   return v;
-}
 
 
 void test()
@@ -84,7 +53,8 @@ void test()
    //    proc_display(&proc[1], &timer);
    // }
 
-   const size_t len = input_size_stdin();
+   // fputs("Enter no of processes: ", stdout);
+   const size_t len = input_size_stdin("Enter no of processes: ");
    LINEAR_ALLOC_ allocator = linear_alloc_create(len * 2 * sizeof(size_t));
 
    // int *arr = linear_alloc(allocator, alignof(int), sizeof(int) * 5);
@@ -95,6 +65,9 @@ void test()
       printf("%zu\n", arr[i]);
 
    linear_alloc_delete(allocator);
+
+   const priority_e p = input_priority_stdin(1, IND "Enter process %u priority: ");
+   printf("%s\n", priority_desc[p]);
 }
 
 int main()
