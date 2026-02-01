@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils/minmax.h"
@@ -5,6 +6,39 @@
 #include "ms-time.h"
 #include "config.h"
 #include "proc.h"
+#include "linear-alloc.h"
+
+
+[[nodiscard]] size_t input_size_stdin()
+{
+   char buf[16];
+   fputs("Enter no of processes: ", stdout);
+
+   if (!fgets(buf, sizeof(buf), stdin))
+   {
+      fputs("Error: read failed\n", stderr);
+      exit(EXIT_FAILURE); /* !--EXIT--! */
+   }
+
+   const char *restrict s = buf;
+   size_t v = 0;
+
+   /* skip whitespace */
+   while (*s == ' ' || *s == '\t')
+      s++;
+
+   /* parse */
+   for (; *s >= '0' && *s <= '9'; s++)
+      v = v * 10 + (*s - '0');
+
+   if (v == 0)
+   {
+      fputs("Error: input size invalid\n", stderr);
+      exit(EXIT_FAILURE); /* !--EXIT--! */
+   }
+
+   return v;
+}
 
 
 void test()
@@ -26,29 +60,41 @@ void test()
    printf("proc_s size:%zu alignment:%zu\n", sizeof(proc_s), alignof(proc_s));
 
 
-   ms_timer_s timer = 1;
-   proc_s proc[2];
+   // ms_timer_s timer = 1;
+   // proc_s proc[2];
 
-   proc_init(&proc[0], &timer, Q0);
-   proc_display(&proc[0], &timer);
+   // proc_init(&proc[0], &timer, Q0);
+   // proc_display(&proc[0], &timer);
 
-   proc_init(&proc[1], &timer, Q0);
-   proc_display(&proc[1], &timer);
+   // proc_init(&proc[1], &timer, Q0);
+   // proc_display(&proc[1], &timer);
 
-   proc[0].state = READY;
-   proc[1].state = READY;
+   // proc[0].state = READY;
+   // proc[1].state = READY;
    
-   while (!PROC_EXIT(&proc[0]))
-   {   
-      proc_run(&proc[0], &timer, TIME_QUANTUM * 100);
-      proc_display(&proc[0], &timer);
-   }
+   // while (!PROC_EXIT(&proc[0]))
+   // {   
+   //    proc_run(&proc[0], &timer, TIME_QUANTUM * 100);
+   //    proc_display(&proc[0], &timer);
+   // }
 
-   while (!PROC_EXIT(&proc[1]))
-   {   
-      proc_run(&proc[1], &timer, TIME_QUANTUM * 100);
-      proc_display(&proc[1], &timer);
-   }
+   // while (!PROC_EXIT(&proc[1]))
+   // {   
+   //    proc_run(&proc[1], &timer, TIME_QUANTUM * 100);
+   //    proc_display(&proc[1], &timer);
+   // }
+
+   const size_t len = input_size_stdin();
+   LINEAR_ALLOC_ allocator = linear_alloc_create(len * 2 * sizeof(size_t));
+
+   // int *arr = linear_alloc(allocator, alignof(int), sizeof(int) * 5);
+   size_t *arr = linear_alloc_type(allocator, size_t, len);
+   for (size_t i = 0; i < len; i++)
+      arr[i] = i + 1;
+   for (size_t i = 0; i < len; i++)
+      printf("%zu\n", arr[i]);
+
+   linear_alloc_delete(allocator);
 }
 
 int main()
