@@ -1,10 +1,13 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils/minmax.h"
 #include "utils/swap.h"
+#include "input.h"
 #include "ms-time.h"
 #include "config.h"
 #include "proc.h"
+#include "linear-alloc.h"
 
 
 void test()
@@ -26,29 +29,46 @@ void test()
    printf("proc_s size:%zu alignment:%zu\n", sizeof(proc_s), alignof(proc_s));
 
 
-   ms_timer_s timer = 1;
-   proc_s proc[2];
+   // ms_timer_s timer = 1;
+   // proc_s proc[2];
 
-   proc_init(&proc[0], &timer, Q0);
-   proc_display(&proc[0], &timer);
+   // proc_init(&proc[0], &timer, Q0);
+   // proc_display(&proc[0], &timer);
 
-   proc_init(&proc[1], &timer, Q0);
-   proc_display(&proc[1], &timer);
+   // proc_init(&proc[1], &timer, Q0);
+   // proc_display(&proc[1], &timer);
 
-   proc[0].state = READY;
-   proc[1].state = READY;
+   // proc[0].state = READY;
+   // proc[1].state = READY;
    
-   while (!PROC_EXIT(&proc[0]))
-   {   
-      proc_run(&proc[0], &timer, TIME_QUANTUM * 100);
-      proc_display(&proc[0], &timer);
-   }
+   // while (!PROC_EXIT(&proc[0]))
+   // {   
+   //    proc_run(&proc[0], &timer, TIME_QUANTUM * 100);
+   //    proc_display(&proc[0], &timer);
+   // }
 
-   while (!PROC_EXIT(&proc[1]))
-   {   
-      proc_run(&proc[1], &timer, TIME_QUANTUM * 100);
-      proc_display(&proc[1], &timer);
-   }
+   // while (!PROC_EXIT(&proc[1]))
+   // {   
+   //    proc_run(&proc[1], &timer, TIME_QUANTUM * 100);
+   //    proc_display(&proc[1], &timer);
+   // }
+
+   // fputs("Enter no of processes: ", stdout);
+   const size_t len = input_size_stdin("Enter no of processes: ");
+   LINEAR_ALLOC_ allocator = linear_alloc_create(len * 2 * sizeof(size_t));
+
+   // int *arr = linear_alloc(allocator, alignof(int), sizeof(int) * 5);
+   size_t *arr = linear_alloc_type(allocator, size_t, len);
+   for (size_t i = 0; i < len; i++)
+      arr[i] = i + 1;
+   for (size_t i = 0; i < len; i++)
+      printf("%zu\n", arr[i]);
+
+   linear_alloc_delete(allocator);
+
+
+   const priority_e p = input_priority_stdin(IND "Enter process 1 priority: ");
+   printf("%s\n", priority_desc[p]);
 }
 
 int main()
