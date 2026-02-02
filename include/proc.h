@@ -44,8 +44,8 @@ void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority);
 void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
 
 // Display process details
-void proc_display(PROC_ proc, MS_TIMER_ timer);
-
+void proc_snapshot(const PROC_ proc, MS_TIMER_ timer);
+void proc_display(const PROC_ proc);
 
 /* --- HELPER MACROS --- */
 

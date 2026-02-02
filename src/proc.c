@@ -135,7 +135,7 @@ void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
 }
 
 
-void proc_display(PROC_ proc, MS_TIMER_ timer)
+void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
 {
    static char buf[256];
    int len = snprintf(buf, sizeof buf, 
@@ -147,6 +147,31 @@ void proc_display(PROC_ proc, MS_TIMER_ timer)
       proc->pid, 
       proc->cpu_remaining, 
       proc_state_desc[proc->state]
+   );
+   fwrite(buf, 1, len, stdout);
+}
+
+void proc_display(const PROC_ proc)
+{
+   static char buf[256];
+   int len = snprintf(buf, sizeof(buf), 
+      "Process (pid:%u)\n"
+      IND "Status: %s\n"
+      IND "Start time:  %10" PRImsd "\n"
+      IND "Finish time: %10" PRImsd "\n"
+      IND "CPU\n"
+      IND2 "Work done:       %10" PRImsd "\n"
+      IND2 "Response time:   %10" PRImsd "\n"
+      IND2 "Wait time:       %10" PRImsd "\n"
+      IND2 "Turnaround time: %10" PRImsd "\n",
+      proc->pid, 
+      proc_state_desc[proc->state],
+      proc->first_exec,
+      proc_completion_time(proc),
+      proc->cpu_total,
+      proc_response_time(proc),
+      proc_wait_time(proc),
+      proc_turnaround_time(proc)
    );
    fwrite(buf, 1, len, stdout);
 }
