@@ -44,6 +44,23 @@ typedef enum proc_state proc_state_e;
 extern const char *proc_state_desc[N_PROC_STATE];
 
 
+/* --- PROCESS QUEUE ALGORITHMS --- */
+
+#define PROC_ALGO(x) \
+   x(RR) \
+   x(SJF) \
+   x(FIFO)
+
+enum proc_algo : uint8_t
+{ 
+   PROC_ALGO(X_ENUM) 
+   N_PROC_ALGO
+};
+
+typedef enum proc_algo proc_algo_e;
+
+
+
 /* --- PRIORITY LEVELS --- */
 
 #define PRIORITY(x) \
@@ -60,6 +77,7 @@ enum priority : uint8_t
 
 typedef enum priority priority_e;
 extern const char *priority_desc[N_PRIORITY];
+extern const proc_algo_e priority_algo[N_PRIORITY];
 
 
 

@@ -9,6 +9,21 @@
 #include "proc.h"
 #include "linear-alloc.h"
 
+const char *proc_state_desc[N_PROC_STATE] = {
+   PROC_STATE(X_DESC)
+};
+
+const char *priority_desc[N_PRIORITY] = {
+   PRIORITY(X_DESC)
+};
+
+const proc_algo_e priority_algo[N_PRIORITY] = {
+   [Q0] = RR,
+   [Q1] = SJF,
+   [Q2] = SJF,
+   [Q3] = FIFO,
+};
+
 
 void test()
 {

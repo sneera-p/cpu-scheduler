@@ -8,14 +8,6 @@
 #include "proc.h"
 
 
-const char *proc_state_desc[N_PROC_STATE] = {
-   PROC_STATE(X_DESC)
-};
-
-const char *priority_desc[N_PRIORITY] = {
-   PRIORITY(X_DESC)
-};
-
 /* --- derived properties --- */
 
 [[nodiscard]] inline ms_timer_s proc_completion_time(PROC_ proc) [[reproducible]]
@@ -141,10 +133,12 @@ void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
    int len = snprintf(buf, sizeof buf, 
       "timer: %12" PRImst "\t"
       "pid: %4u\t"
+      " [%s] "
       "cpu_remaining: %10" PRImsd "\t"
       "status: %s\n", 
       *timer, 
       proc->pid, 
+      priority_desc[proc->priority], 
       proc->cpu_remaining, 
       proc_state_desc[proc->state]
    );
@@ -156,7 +150,8 @@ void proc_display(const PROC_ proc)
    static char buf[256];
    int len = snprintf(buf, sizeof(buf), 
       "Process (pid:%u)\n"
-      IND "Status: %s\n"
+      IND "priority: %s\n"
+      IND "Status  : %s\n"
       IND "Start time:  %10" PRImsd "\n"
       IND "Finish time: %10" PRImsd "\n"
       IND "CPU\n"
@@ -165,6 +160,7 @@ void proc_display(const PROC_ proc)
       IND2 "Wait time:       %10" PRImsd "\n"
       IND2 "Turnaround time: %10" PRImsd "\n",
       proc->pid, 
+      priority_desc[proc->priority], 
       proc_state_desc[proc->state],
       proc->first_exec,
       proc_completion_time(proc),
