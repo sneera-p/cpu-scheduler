@@ -53,10 +53,14 @@ $(TARGET): $(OBJS) $(LIBS) | $(BIN_DIR)
 build: $(TARGET)
 
 run: build
-	./$(TARGET) $(ARGS)
+ifeq ($(strip $(IN)),)
+	./$(TARGET) $(LOG)
+else
+	cat $(IN) | ./$(TARGET) $(LOG)
+endif
 
 clean:
-	rm -rv $(TMP_DIR) $(BIN_DIR)
+	rm -rv $(TMP_DIR) $(BIN_DIR) ./*.txt
 
 
 -include $(DEPS)

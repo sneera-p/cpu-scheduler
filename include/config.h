@@ -32,7 +32,8 @@
    x(NEW) /* creating / waiting to start running */ \
    x(READY) /* ready (in STS) */ \
    x(RUNNING) /* running (started running) */ \
-   x(EXIT) /* finished running */
+   x(COMPLETE) /* finished running */ \
+   x(EXIT) /* removed from STS queue */
 
 enum proc_state : uint8_t
 {

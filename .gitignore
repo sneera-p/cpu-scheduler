@@ -6,3 +6,7 @@ bin/**
 
 tmp/**
 .tmp/**
+
+*.txt
+*.bat
+*.log

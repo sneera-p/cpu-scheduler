@@ -12,13 +12,13 @@
 
 [[nodiscard]] inline ms_timer_s proc_completion_time(PROC_ proc) [[reproducible]]
 {
-   assert(PROC_EXIT(proc));
+   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
    return proc->last_exec;
 }
 
 [[nodiscard]] inline ms_delta_s proc_turnaround_time(PROC_ proc) [[reproducible]]
 {
-   assert(PROC_EXIT(proc));
+   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
    return (proc->last_exec - proc->arrival_time);
 }
 
@@ -121,7 +121,7 @@ void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
    // process exit (termination)
    if (proc->cpu_remaining == 0)
    {
-      proc->state = EXIT;
+      proc->state = COMPLETE;
       // *timer += TIME_PROC_INIT;
    }
 }
@@ -142,7 +142,7 @@ void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
       proc->cpu_remaining, 
       proc_state_desc[proc->state]
    );
-   fwrite(buf, 1, len, stdout);
+   fwrite(buf, 1, len, logstream);
 }
 
 void proc_display(const PROC_ proc)
@@ -152,22 +152,22 @@ void proc_display(const PROC_ proc)
       "Process (pid:%u)\n"
       IND "priority: %s\n"
       IND "Status  : %s\n"
-      IND "Start time:  %10" PRImsd "\n"
-      IND "Finish time: %10" PRImsd "\n"
       IND "CPU\n"
       IND2 "Work done:       %10" PRImsd "\n"
       IND2 "Response time:   %10" PRImsd "\n"
       IND2 "Wait time:       %10" PRImsd "\n"
-      IND2 "Turnaround time: %10" PRImsd "\n",
+      IND2 "Turnaround time: %10" PRImsd "\n"
+      IND "Start time:  %10" PRImsd "\n"
+      IND "Finish time: %10" PRImsd "\n",
       proc->pid, 
       priority_desc[proc->priority], 
       proc_state_desc[proc->state],
-      proc->first_exec,
-      proc_completion_time(proc),
       proc->cpu_total,
       proc_response_time(proc),
       proc_wait_time(proc),
-      proc_turnaround_time(proc)
+      proc_turnaround_time(proc),
+      proc->first_exec,
+      proc_completion_time(proc)
    );
-   fwrite(buf, 1, len, stdout);
+   fwrite(buf, 1, len, logstream);
 }

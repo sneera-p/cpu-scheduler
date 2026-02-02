@@ -2,9 +2,11 @@
 #define SCHEDULER__PROC__H
 
 #include <stdint.h>
+#include <stdio.h>
 #include "ms-time.h"
 #include "config.h"
 
+extern FILE *logstream;
 
 struct proc
 {
@@ -47,13 +49,15 @@ void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
 void proc_snapshot(const PROC_ proc, MS_TIMER_ timer);
 void proc_display(const PROC_ proc);
 
+
 /* --- HELPER MACROS --- */
 
-#define PROC_NEW(proc)     ((proc) && (proc)->state == NEW)
-#define PROC_READY(proc)   ((proc) && (proc)->state == READY)
-#define PROC_RUNNING(proc) ((proc) && (proc)->state == RUNNING)
-#define PROC_HASRUN(proc)  ((proc) && (proc)->last_exec != 0)
-#define PROC_EXIT(proc)    ((proc) && (proc)->state == EXIT)
+#define PROC_NEW(proc)        ((proc) && (proc)->state == NEW)
+#define PROC_READY(proc)      ((proc) && (proc)->state == READY)
+#define PROC_RUNNING(proc)    ((proc) && (proc)->state == RUNNING)
+#define PROC_HASRUN(proc)     ((proc) && (proc)->last_exec != 0)
+#define PROC_COMPLETE(proc)   ((proc) && (proc)->state == COMPLETE)
+#define PROC_EXIT(proc)       ((proc) && (proc)->state == EXIT)
 
 
 /* --- SANITY CHECKS --- */
