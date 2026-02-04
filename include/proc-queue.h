@@ -66,6 +66,17 @@ proc_s *proc_queue_peek_sorted(PROC_QUE_ queue);   /* queue is SORTED */
 extern proc_s *proc_queue_peek(PROC_QUE_ queue);   /* generic */
 
 
+/* --- QUEUE ALGORITHMS --- */
+
+typedef void (*queue_runner_f)(PROC_QUE_, MS_TIMER_);
+
+extern const queue_runner_f queue_runners[N_PROC_ALGO];
+
+void run_rr(PROC_QUE_ queue, MS_TIMER_ timer);
+void run_sjf(PROC_QUE_ queue, MS_TIMER_ timer);
+void run_fifo(PROC_QUE_ queue, MS_TIMER_ timer);
+
+
 /* --- HELPER MACROS --- */
 
 #define QUEUE_CIRC_BACK(queue)       ((queue->front + queue->len - 1) % queue->cap)

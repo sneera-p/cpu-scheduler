@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include "utils/swap.h"
+#include "utils/minmax.h"
 #include "proc-queue.h"
 
 [[nodiscard]] inline bool proc_queue_isempty(PROC_QUE_ queue) [[reproducible]]
@@ -31,7 +32,7 @@ void proc_queue_init(PROC_QUE_ queue, const size_t cap, void *const buffer, cons
    *queue = (proc_queue_s) {
       .cap = cap,
       .len = 0,
-      .front = (is_sorted) ? 0 : cap + 1,
+      .front = (is_sorted) ? cap + 1 : 0,
       .data = (proc_s**)buffer,
    };
 }
@@ -132,7 +133,6 @@ inline void proc_queue_insert(PROC_QUE_ queue, PROC_ proc)
 }
 
 
-// remove
 void proc_queue_remove_front(PROC_QUE_ queue)
 {
    assert(!proc_queue_issorted(queue));
@@ -182,4 +182,72 @@ proc_s *proc_queue_peek(PROC_QUE_ queue)
       return proc_queue_peek_sorted(queue);
    else
       return proc_queue_peek_circular(queue);
+}
+
+
+/* --- QUEUE ALGORITHMS --- */
+
+const queue_runner_f queue_runners[N_PROC_ALGO] = {
+   [RR] = run_rr,
+   [SJF] = run_sjf,
+   [FIFO] = run_fifo,
+};
+
+void run_rr(PROC_QUE_ queue, MS_TIMER_ timer)
+{
+   assert(queue);
+   assert(timer);
+
+   ms_delta_s quantum = TIME_QUANTUM;
+   while (quantum > 0 && !proc_queue_isempty(queue))
+   {
+      PROC_ proc = proc_queue_peek_circular(queue);
+
+      quantum -= proc_run(proc, timer, min(proc->cpu_remaining, min(quantum, Q0_TIME_QUANTUM)));
+      if (PROC_COMPLETE(proc))
+         proc_queue_remove_front(queue);
+      else
+         proc_queue_rotate(queue);
+
+      proc_snapshot(proc, timer);
+      *timer += TIME_PROC_SWITCH;
+   }   
+}
+
+void run_sjf(PROC_QUE_ queue, MS_TIMER_ timer)
+{
+   assert(queue);
+   assert(timer);
+
+   ms_delta_s quantum = TIME_QUANTUM;
+   while (quantum > 0 && !proc_queue_isempty(queue))
+   {
+      PROC_ proc = proc_queue_peek_sorted(queue);
+
+      quantum -= proc_run(proc, timer, min(proc->cpu_remaining, quantum));
+      if (PROC_COMPLETE(proc))
+         proc_queue_remove_sorted(queue);
+
+      proc_snapshot(proc, timer);
+      *timer += TIME_PROC_SWITCH;
+   }
+}
+
+void run_fifo(PROC_QUE_ queue, MS_TIMER_ timer)
+{
+   assert(queue);
+   assert(timer);
+
+   ms_delta_s quantum = TIME_QUANTUM;
+   while (quantum > 0 && !proc_queue_isempty(queue))
+   {
+      PROC_ proc = proc_queue_peek_circular(queue);
+
+      quantum -= proc_run(proc, timer, min(proc->cpu_remaining, quantum));
+      if (PROC_COMPLETE(proc))
+         proc_queue_remove_front(queue);
+
+      proc_snapshot(proc, timer);
+      *timer += TIME_PROC_SWITCH;
+   }
 }

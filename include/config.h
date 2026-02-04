@@ -1,6 +1,7 @@
 #ifndef SCHEDULER__CONFIG__H
 #define SCHEDULER__CONFIG__H
 
+#include <stdint.h>
 #include "utils/xmacro.h"
 
 
@@ -59,6 +60,7 @@ enum proc_algo : uint8_t
 };
 
 typedef enum proc_algo proc_algo_e;
+extern const bool proc_algo_queue_mode[N_PROC_ALGO];
 
 
 

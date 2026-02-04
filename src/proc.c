@@ -99,8 +99,9 @@ void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority)
    *timer += TIME_PROC_INIT;
 }
 
-void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
+ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
 {
+   assert(proc);
    assert(PROC_READY(proc) || PROC_RUNNING(proc));
    assert(quantum > 0);
 
@@ -111,19 +112,17 @@ void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
       proc->state = RUNNING;
    }
 
-   ms_delta_s work_done = min(proc->cpu_remaining, quantum);
+   const ms_delta_s work_done = min(proc->cpu_remaining, quantum);
+
+   proc->cpu_remaining -= work_done;
+   proc->last_exec = *timer + work_done;
 
    *timer += work_done;
 
-   proc->cpu_remaining -= work_done;
-   proc->last_exec = *timer;
-
    // process exit (termination)
    if (proc->cpu_remaining == 0)
-   {
       proc->state = COMPLETE;
-      // *timer += TIME_PROC_INIT;
-   }
+   return work_done;
 }
 
 
@@ -142,14 +141,14 @@ void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
       proc->cpu_remaining, 
       proc_state_desc[proc->state]
    );
-   fwrite(buf, 1, len, logstream);
+   fwrite(buf, 1, (size_t)len, logstream);
 }
 
 void proc_display(const PROC_ proc)
 {
-   static char buf[256];
+   static char buf[1024];
    int len = snprintf(buf, sizeof(buf), 
-      "Process (pid:%u)\n"
+      "\nProcess (pid:%u)\n"
       IND "priority: %s\n"
       IND "Status  : %s\n"
       IND "CPU\n"
@@ -162,12 +161,12 @@ void proc_display(const PROC_ proc)
       proc->pid, 
       priority_desc[proc->priority], 
       proc_state_desc[proc->state],
-      proc->cpu_total,
+      proc_work_done(proc),
       proc_response_time(proc),
       proc_wait_time(proc),
       proc_turnaround_time(proc),
       proc->first_exec,
       proc_completion_time(proc)
    );
-   fwrite(buf, 1, len, logstream);
+   fwrite(buf, 1, (size_t)len, stdout);
 }

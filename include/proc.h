@@ -42,8 +42,8 @@ extern ms_delta_s proc_wait_time(PROC_ proc);
 // Initializes a process struct and returns the time taken for creation
 void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority);
 
-// Runs the process for a given duration. Returns the the time taken.
-void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
+// Runs the process for a given duration. Returns the time taken.
+[[nodiscard]] ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
 
 // Display process details
 void proc_snapshot(const PROC_ proc, MS_TIMER_ timer);
