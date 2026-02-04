@@ -8,25 +8,17 @@
 #include "proc.h"
 
 
-const char *proc_state_desc[N_PROC_STATE] = {
-   PROC_STATE(X_DESC)
-};
-
-const char *priority_desc[N_PRIORITY] = {
-   PRIORITY(X_DESC)
-};
-
 /* --- derived properties --- */
 
 [[nodiscard]] inline ms_timer_s proc_completion_time(PROC_ proc) [[reproducible]]
 {
-   assert(PROC_EXIT(proc));
+   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
    return proc->last_exec;
 }
 
 [[nodiscard]] inline ms_delta_s proc_turnaround_time(PROC_ proc) [[reproducible]]
 {
-   assert(PROC_EXIT(proc));
+   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
    return (proc->last_exec - proc->arrival_time);
 }
 
@@ -107,8 +99,9 @@ void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority)
    *timer += TIME_PROC_INIT;
 }
 
-void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
+ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
 {
+   assert(proc);
    assert(PROC_READY(proc) || PROC_RUNNING(proc));
    assert(quantum > 0);
 
@@ -119,34 +112,61 @@ void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
       proc->state = RUNNING;
    }
 
-   ms_delta_s work_done = min(proc->cpu_remaining, quantum);
+   const ms_delta_s work_done = min(proc->cpu_remaining, quantum);
+
+   proc->cpu_remaining -= work_done;
+   proc->last_exec = *timer + work_done;
 
    *timer += work_done;
 
-   proc->cpu_remaining -= work_done;
-   proc->last_exec = *timer;
-
    // process exit (termination)
    if (proc->cpu_remaining == 0)
-   {
-      proc->state = EXIT;
-      // *timer += TIME_PROC_INIT;
-   }
+      proc->state = COMPLETE;
+   return work_done;
 }
 
 
-void proc_display(PROC_ proc, MS_TIMER_ timer)
+void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
 {
    static char buf[256];
    int len = snprintf(buf, sizeof buf, 
       "timer: %12" PRImst "\t"
       "pid: %4u\t"
+      " [%s] "
       "cpu_remaining: %10" PRImsd "\t"
       "status: %s\n", 
       *timer, 
       proc->pid, 
+      priority_desc[proc->priority], 
       proc->cpu_remaining, 
       proc_state_desc[proc->state]
    );
-   fwrite(buf, 1, len, stdout);
+   fwrite(buf, 1, (size_t)len, logstream);
+}
+
+void proc_display(const PROC_ proc)
+{
+   static char buf[1024];
+   int len = snprintf(buf, sizeof(buf), 
+      "\nProcess (pid:%u)\n"
+      IND "priority: %s\n"
+      IND "Status  : %s\n"
+      IND "CPU\n"
+      IND2 "Work done:       %10" PRImsd "\n"
+      IND2 "Response time:   %10" PRImsd "\n"
+      IND2 "Wait time:       %10" PRImsd "\n"
+      IND2 "Turnaround time: %10" PRImsd "\n"
+      IND "Start time:  %10" PRImsd "\n"
+      IND "Finish time: %10" PRImsd "\n",
+      proc->pid, 
+      priority_desc[proc->priority], 
+      proc_state_desc[proc->state],
+      proc_work_done(proc),
+      proc_response_time(proc),
+      proc_wait_time(proc),
+      proc_turnaround_time(proc),
+      proc->first_exec,
+      proc_completion_time(proc)
+   );
+   fwrite(buf, 1, (size_t)len, stdout);
 }

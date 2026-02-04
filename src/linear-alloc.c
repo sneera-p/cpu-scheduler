@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "linear-alloc.h"
 
@@ -8,7 +9,10 @@ linear_alloc_s *linear_alloc_create(const size_t size)
 
    linear_alloc_s *alloc = malloc(sizeof(linear_alloc_s) + size);
    if (!alloc)
-      exit(EXIT_FAILURE);
+   {
+      puts("Error: linear allocator failed to initialise");
+      return nullptr;
+   }
 
    *alloc = (linear_alloc_s) {
       .size = size,

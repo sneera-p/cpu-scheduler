@@ -1,78 +1,94 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include "utils/minmax.h"
 #include "utils/swap.h"
 #include "input.h"
 #include "ms-time.h"
 #include "config.h"
 #include "proc.h"
+#include "proc-queue.h"
 #include "linear-alloc.h"
+#include "scheduler.h"
+
+FILE *logstream = nullptr;
+
+const char *proc_state_desc[N_PROC_STATE] = {
+   PROC_STATE(X_DESC)
+};
+
+const char *priority_desc[N_PRIORITY] = {
+   PRIORITY(X_DESC)
+};
+
+const proc_algo_e priority_algo[N_PRIORITY] = {
+   [Q0] = RR,
+   [Q1] = SJF,
+   [Q2] = SJF,
+   [Q3] = FIFO,
+};
+
+const bool proc_algo_queue_mode[N_PROC_ALGO] = {
+   [RR] = UNSORTED,
+   [SJF] = SORTED,
+   [FIFO] = UNSORTED,
+};
 
 
-void test()
+[[noreturn]] void sigint_cb(int revents);
+[[noreturn]] void sigterm_cb(int revents);
+[[nodiscard]] size_t __mem_size(size_t n) [[unsequenced]];
+
+int main(int argc, char *argv[])
 {
-   // ms_timer_s a = 3;
-   // ms_timer_s b = 4;
-   // printf("max: %" PRImst ", min: %" PRImst "\n", max(a, b), min(a, b));
+   signal(SIGINT, sigint_cb);
+   signal(SIGTERM, sigterm_cb);
 
-   // printf("a: %" PRImst ", b: %" PRImst "\n", a, b);
-   // SWAP(a, b);
-   // printf("a: %" PRImst ", b: %" PRImst "\n", a, b);
+   logstream = (argc == 2) ? fopen(argv[1], "w") : stdout;
+   if (!logstream)
+      logstream = stdout;
 
-   // const priority_e p = Q1;
-   // printf("%s\n", priority_desc[p]);
-
-   // const proc_state_e s = NEW;
-   // printf("%s\n", proc_state_desc[s]);
-
-   printf("proc_s size:%zu alignment:%zu\n", sizeof(proc_s), alignof(proc_s));
-
-
-   // ms_timer_s timer = 1;
-   // proc_s proc[2];
-
-   // proc_init(&proc[0], &timer, Q0);
-   // proc_display(&proc[0], &timer);
-
-   // proc_init(&proc[1], &timer, Q0);
-   // proc_display(&proc[1], &timer);
-
-   // proc[0].state = READY;
-   // proc[1].state = READY;
-   
-   // while (!PROC_EXIT(&proc[0]))
-   // {   
-   //    proc_run(&proc[0], &timer, TIME_QUANTUM * 100);
-   //    proc_display(&proc[0], &timer);
-   // }
-
-   // while (!PROC_EXIT(&proc[1]))
-   // {   
-   //    proc_run(&proc[1], &timer, TIME_QUANTUM * 100);
-   //    proc_display(&proc[1], &timer);
-   // }
-
-   // fputs("Enter no of processes: ", stdout);
    const size_t len = input_size_stdin("Enter no of processes: ");
-   LINEAR_ALLOC_ allocator = linear_alloc_create(len * 2 * sizeof(size_t));
+   if (len == 0)
+      exit(EXIT_FAILURE);
 
-   // int *arr = linear_alloc(allocator, alignof(int), sizeof(int) * 5);
-   size_t *arr = linear_alloc_type(allocator, size_t, len);
-   for (size_t i = 0; i < len; i++)
-      arr[i] = i + 1;
-   for (size_t i = 0; i < len; i++)
-      printf("%zu\n", arr[i]);
+   LINEAR_ALLOC_ allocator = linear_alloc_create(__mem_size(len));
+   if (!allocator)
+      exit(EXIT_FAILURE);  
+
+   ms_timer_s timer = 1;
+   SCHEDULER_ scheduler = linear_alloc(allocator, alignof(scheduler_s), sizeof(scheduler_s) + len * sizeof(proc_s));
+   scheduler_init(scheduler, allocator, len, &timer);
+   scheduler_run(scheduler, &timer);
+   scheduler_exit(scheduler);
 
    linear_alloc_delete(allocator);
+   if (logstream != stdout)
+      fclose(logstream);
 
-
-   const priority_e p = input_priority_stdin(IND "Enter process 1 priority: ");
-   printf("%s\n", priority_desc[p]);
+   return 0;
 }
 
-int main()
+void sigint_cb(int /* revents */)
 {
-   test();
-   return 0;
+   puts("\nScheduler interupted\nTerminating...");
+   exit(EXIT_FAILURE);
+}
+
+void sigterm_cb(int /* revents */)
+{
+   puts("Scheduler Terminating...");
+   exit(EXIT_FAILURE);
+}
+
+size_t __mem_size(size_t n)
+{
+   return (
+      sizeof(scheduler_s) * 2
+      + sizeof(proc_s) * ((n) + 10)
+      + sizeof(proc_s*) * ((n) * (N_PRIORITY + 4))
+      + sizeof(proc_queue_s) * (N_PRIORITY + 4)
+      + sizeof(proc_queue_s*) * (N_PRIORITY + 4)
+   );
 }

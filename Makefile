@@ -1,6 +1,51 @@
 CC = gcc
 CSTD = c23
-FLAGS = -Wall -Wextra -Wpedantic -MMD -MP -O2 -flto -mavx2 -mfma -march=native
+
+DEBUG_FLAGS = \
+	-O0 \
+	-g3 \
+	-DDEBUG \
+	-fsanitize=address \
+	-fsanitize=undefined \
+	-fsanitize=leak \
+	-fsanitize=null \
+	-fsanitize=bounds \
+	-fsanitize=float-divide-by-zero \
+	-fsanitize-recover=all \
+	-fstack-protector-strong \
+	-fno-omit-frame-pointer \
+	-fno-inline
+
+RELEASE_FLAGS = \
+	-O2 \
+	-DNDEBUG \
+	-flto \
+	-mavx2 \
+	-mfma \
+	-march=native
+
+FLAGS = \
+	-MMD \
+	-MP \
+	-Wall \
+	-Wextra \
+	-Wpedantic \
+	-Wshadow \
+	-Wformat=2 \
+	-Wsign-conversion \
+	-Wcast-align \
+	-Wlogical-op \
+	-Wnull-dereference \
+	-Wfloat-equal \
+	-Wredundant-decls
+# 	-Wconversion \
+
+
+ifeq ($(strip $(MODE)),r)
+	FLAGS += $(RELEASE_FLAGS)
+else
+	FLAGS += $(DEBUG_FLAGS)
+endif
 
 BIN_DIR = bin
 TMP_DIR = .tmp
@@ -53,10 +98,14 @@ $(TARGET): $(OBJS) $(LIBS) | $(BIN_DIR)
 build: $(TARGET)
 
 run: build
-	./$(TARGET) $(ARGS)
+ifeq ($(strip $(IN)),)
+	./$(TARGET) $(LOG)
+else
+	cat $(IN) | ./$(TARGET) $(LOG)
+endif
 
 clean:
-	rm -rv $(TMP_DIR) $(BIN_DIR)
+	rm -rv $(TMP_DIR) $(BIN_DIR) ./*.txt
 
 
 -include $(DEPS)

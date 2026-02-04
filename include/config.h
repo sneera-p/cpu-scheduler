@@ -1,6 +1,7 @@
 #ifndef SCHEDULER__CONFIG__H
 #define SCHEDULER__CONFIG__H
 
+#include <stdint.h>
 #include "utils/xmacro.h"
 
 
@@ -32,7 +33,8 @@
    x(NEW) /* creating / waiting to start running */ \
    x(READY) /* ready (in STS) */ \
    x(RUNNING) /* running (started running) */ \
-   x(EXIT) /* finished running */
+   x(COMPLETE) /* finished running */ \
+   x(EXIT) /* removed from STS queue */
 
 enum proc_state : uint8_t
 {
@@ -42,6 +44,24 @@ enum proc_state : uint8_t
 
 typedef enum proc_state proc_state_e;
 extern const char *proc_state_desc[N_PROC_STATE];
+
+
+/* --- PROCESS QUEUE ALGORITHMS --- */
+
+#define PROC_ALGO(x) \
+   x(RR) \
+   x(SJF) \
+   x(FIFO)
+
+enum proc_algo : uint8_t
+{ 
+   PROC_ALGO(X_ENUM) 
+   N_PROC_ALGO
+};
+
+typedef enum proc_algo proc_algo_e;
+extern const bool proc_algo_queue_mode[N_PROC_ALGO];
+
 
 
 /* --- PRIORITY LEVELS --- */
@@ -60,6 +80,7 @@ enum priority : uint8_t
 
 typedef enum priority priority_e;
 extern const char *priority_desc[N_PRIORITY];
+extern const proc_algo_e priority_algo[N_PRIORITY];
 
 
 

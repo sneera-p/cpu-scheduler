@@ -2,9 +2,11 @@
 #define SCHEDULER__PROC__H
 
 #include <stdint.h>
+#include <stdio.h>
 #include "ms-time.h"
 #include "config.h"
 
+extern FILE *logstream;
 
 struct proc
 {
@@ -40,20 +42,22 @@ extern ms_delta_s proc_wait_time(PROC_ proc);
 // Initializes a process struct and returns the time taken for creation
 void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority);
 
-// Runs the process for a given duration. Returns the the time taken.
-void proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
+// Runs the process for a given duration. Returns the time taken.
+[[nodiscard]] ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
 
 // Display process details
-void proc_display(PROC_ proc, MS_TIMER_ timer);
+void proc_snapshot(const PROC_ proc, MS_TIMER_ timer);
+void proc_display(const PROC_ proc);
 
 
 /* --- HELPER MACROS --- */
 
-#define PROC_NEW(proc)     ((proc) && (proc)->state == NEW)
-#define PROC_READY(proc)   ((proc) && (proc)->state == READY)
-#define PROC_RUNNING(proc) ((proc) && (proc)->state == RUNNING)
-#define PROC_HASRUN(proc)  ((proc) && (proc)->last_exec != 0)
-#define PROC_EXIT(proc)    ((proc) && (proc)->state == EXIT)
+#define PROC_NEW(proc)        ((proc) && (proc)->state == NEW)
+#define PROC_READY(proc)      ((proc) && (proc)->state == READY)
+#define PROC_RUNNING(proc)    ((proc) && (proc)->state == RUNNING)
+#define PROC_HASRUN(proc)     ((proc) && (proc)->last_exec != 0)
+#define PROC_COMPLETE(proc)   ((proc) && (proc)->state == COMPLETE)
+#define PROC_EXIT(proc)       ((proc) && (proc)->state == EXIT)
 
 
 /* --- SANITY CHECKS --- */
