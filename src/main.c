@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
    signal(SIGINT, sigint_cb);
    signal(SIGTERM, sigterm_cb);
 
-   logstream = (argc == 2) ? fopen(argv[1], "w") : stdout;
+   logstream = (argc < 2) ? stdout : fopen(argv[1], "w");
    if (!logstream)
       logstream = stdout;
 

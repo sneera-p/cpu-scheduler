@@ -76,6 +76,21 @@ void run_rr(PROC_QUE_ queue, MS_TIMER_ timer);
 void run_sjf(PROC_QUE_ queue, MS_TIMER_ timer);
 void run_fifo(PROC_QUE_ queue, MS_TIMER_ timer);
 
+/* --- QUEUE METRICS --- */
+
+struct proc_queue_metrics
+{
+   unsigned _BitInt(128) work_time; 
+   unsigned _BitInt(128) response_time; 
+   unsigned _BitInt(128) wait_time; 
+   unsigned _BitInt(128) turnaround_time; 
+   size_t len;
+};
+
+typedef struct proc_queue_metrics proc_queue_metrics_s;
+
+void proc_queue_print_table(const proc_queue_metrics_s metrics[N_PRIORITY]);
+
 
 /* --- HELPER MACROS --- */
 
