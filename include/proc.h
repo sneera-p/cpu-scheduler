@@ -8,6 +8,8 @@
 
 extern FILE *logstream;
 
+/* --- PCB struct --- */
+
 struct proc
 {
    ms_delta_s cpu_remaining;  // CPU time still needed to finish
@@ -24,15 +26,6 @@ typedef struct proc proc_s;
 typedef proc_s *const restrict PROC_;
 
 
-/* --- derived properties --- */
-extern ms_timer_s proc_completion_time(PROC_ proc);
-extern ms_delta_s proc_turnaround_time(PROC_ proc);
-extern ms_delta_s proc_active_time(PROC_ proc);
-extern ms_delta_s proc_response_time(PROC_ proc);
-extern ms_delta_s proc_work_done(PROC_ proc);
-extern ms_delta_s proc_wait_time(PROC_ proc);
-
-
 // Compares 2 processes and returns
 //    -1: less than
 //    0: equal,
@@ -45,9 +38,26 @@ void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority);
 // Runs the process for a given duration. Returns the time taken.
 [[nodiscard]] ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum);
 
+
+/* --- Process metrics --- */
+
+struct proc_metrics
+{
+   ms_delta_s turnaround_time;
+   ms_delta_s response_time;
+   ms_delta_s wait_time;
+   uint32_t pid;
+};
+
+typedef struct proc_metrics proc_metrics_s;
+
+[[nodiscard]] proc_metrics_s proc_get_metrics(PROC_ proc) [[reproducible]];
+
+
 // Display process details
 void proc_snapshot(const PROC_ proc, MS_TIMER_ timer);
-void proc_display(const PROC_ proc);
+void proc_display(const PROC_ proc, const proc_metrics_s metrics);
+void proc_print_table(const proc_s procs[], const proc_metrics_s metrics[], const size_t len);
 
 
 /* --- HELPER MACROS --- */

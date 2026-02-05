@@ -53,11 +53,24 @@ void scheduler_exit(SCHEDULER_ scheduler)
    {
       if (proc_queue_isempty(scheduler->queues[i]))
          continue;
-      printf("Warning: Process queue [%s] is not empty @ scheduler exit\n", priority_desc[i]);      
+      printf("Warning: Process queue [%s] is not empty @ scheduler exit\n", priority_desc[i]);
    }
-   puts("TODO: Statistical analysis");
+
+   proc_metrics_s metrics[scheduler->nproc];
+   proc_queue_metrics_s sums[N_PRIORITY] = {0};
    for (size_t i = 0; i < scheduler->nproc; i++)
-      proc_display(&scheduler->procs[i]);
+   {
+      PROC_ proc = &scheduler->procs[i];
+      metrics[i] = proc_get_metrics(proc);
+      proc_display(proc, metrics[i]);
+      sums[proc->priority].work_time += proc->cpu_total;
+      sums[proc->priority].turnaround_time += metrics[i].turnaround_time;
+      sums[proc->priority].response_time += metrics[i].response_time;
+      sums[proc->priority].wait_time += metrics[i].wait_time;
+      sums[proc->priority].len++;
+   }
+   proc_print_table(scheduler->procs, metrics, scheduler->nproc);
+   proc_queue_print_table(sums);
 }
 
 [[nodiscard]] static inline priority_e _scheduler_next(const uint64_t mask, const priority_e cur) [[unsequenced]]

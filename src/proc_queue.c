@@ -222,6 +222,9 @@ void run_sjf(PROC_QUE_ queue, MS_TIMER_ timer)
    ms_delta_s quantum = TIME_QUANTUM;
    while (quantum > 0 && !proc_queue_isempty(queue))
    {
+      // This is usefull is preemptive scenarios (processes inserted in middle of scheduler run)
+      proc_queue_bubble_up(queue); 
+
       PROC_ proc = proc_queue_peek_sorted(queue);
 
       quantum -= proc_run(proc, timer, min(proc->cpu_remaining, quantum));
@@ -250,4 +253,33 @@ void run_fifo(PROC_QUE_ queue, MS_TIMER_ timer)
       proc_snapshot(proc, timer);
       *timer += TIME_PROC_SWITCH;
    }
+}
+
+void proc_queue_print_table(const proc_queue_metrics_s metrics[N_PRIORITY])
+{
+   assert(metrics);
+
+   #define checked_div(v, d) (((d) != 0) ? ((v) / (d)) : 0)
+
+   printf(
+      "\n\n| %-5s | %-16s | %-16s | %-16s | %-16s |\n",
+      "queue",
+      "work done",
+      "response time",
+      "wait time",
+      "turnaround time"
+   );
+   for (priority_e i = 0; i < N_PRIORITY; i++)
+   {
+      printf(
+         "| %-5s | %16"PRImsd" | %16"PRImsd" | %16"PRImsd" | %16"PRImsd" |\n",
+         priority_desc[i],
+         (ms_delta_s)checked_div(metrics[i].work_time, metrics[i].len),
+         (ms_delta_s)checked_div(metrics[i].response_time, metrics[i].len),
+         (ms_delta_s)checked_div(metrics[i].wait_time, metrics[i].len),
+         (ms_delta_s)checked_div(metrics[i].turnaround_time, metrics[i].len)
+      );
+   }
+
+   #undef checked_div
 }

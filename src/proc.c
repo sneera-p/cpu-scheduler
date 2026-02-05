@@ -8,45 +8,6 @@
 #include "proc.h"
 
 
-/* --- derived properties --- */
-
-[[nodiscard]] inline ms_timer_s proc_completion_time(PROC_ proc) [[reproducible]]
-{
-   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
-   return proc->last_exec;
-}
-
-[[nodiscard]] inline ms_delta_s proc_turnaround_time(PROC_ proc) [[reproducible]]
-{
-   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
-   return (proc->last_exec - proc->arrival_time);
-}
-
-[[nodiscard]] inline ms_delta_s proc_active_time(PROC_ proc) [[reproducible]]
-{
-   assert(PROC_HASRUN(proc));
-   return (proc->last_exec - proc->arrival_time);
-}
-
-[[nodiscard]] inline ms_delta_s proc_response_time(PROC_ proc) [[reproducible]]
-{
-   assert(PROC_HASRUN(proc));
-   return (proc->first_exec - proc->arrival_time);
-}
-
-[[nodiscard]] inline ms_delta_s proc_work_done(PROC_ proc) [[reproducible]]
-{
-   assert(proc);
-   return (proc->cpu_total - proc->cpu_remaining);
-}
-
-[[nodiscard]] inline ms_delta_s proc_wait_time(PROC_ proc) [[reproducible]]
-{
-   return proc_active_time(proc) - proc_work_done(proc);
-}
-
-
-
 int8_t proc_cmp(const PROC_ proc1, const PROC_ proc2)
 {
    assert(proc1);
@@ -128,8 +89,8 @@ ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
 
 void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
 {
-   static char buf[256];
-   int len = snprintf(buf, sizeof buf, 
+   fprintf(
+      logstream, 
       "timer: %12" PRImst "\t"
       "pid: %4u\t"
       " [%s] "
@@ -141,13 +102,12 @@ void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
       proc->cpu_remaining, 
       proc_state_desc[proc->state]
    );
-   fwrite(buf, 1, (size_t)len, logstream);
 }
 
-void proc_display(const PROC_ proc)
+void proc_display(const PROC_ proc, const proc_metrics_s metrics)
 {
-   static char buf[1024];
-   int len = snprintf(buf, sizeof(buf), 
+   fprintf(
+      logstream, 
       "\nProcess (pid:%u)\n"
       IND "priority: %s\n"
       IND "Status  : %s\n"
@@ -161,12 +121,54 @@ void proc_display(const PROC_ proc)
       proc->pid, 
       priority_desc[proc->priority], 
       proc_state_desc[proc->state],
-      proc_work_done(proc),
-      proc_response_time(proc),
-      proc_wait_time(proc),
-      proc_turnaround_time(proc),
+      proc->cpu_total,
+      metrics.response_time,
+      metrics.wait_time,
+      metrics.turnaround_time,
       proc->first_exec,
-      proc_completion_time(proc)
+      proc->last_exec
    );
-   fwrite(buf, 1, (size_t)len, stdout);
 }
+
+void proc_print_table(const proc_s procs[], const proc_metrics_s metrics[], const size_t len)
+{
+   assert(procs);
+   assert(metrics);
+   assert(len > 0);
+
+   printf(
+      "\n\n| %-4s | %-8s | %-16s | %-16s | %-16s | %-16s |\n",
+      "proc",
+      "priority",
+      "work done",
+      "response time",
+      "wait time",
+      "turnaround time"
+   );
+
+   for (size_t i = 0; i < len; i++)
+   {
+      printf(
+         "| %4u | %-8s | %16"PRImsd" | %16"PRImsd" | %16"PRImsd" | %16"PRImsd" |\n",
+         procs[i].pid,
+         priority_desc[procs[i].priority],
+         procs[i].cpu_total,
+         metrics[i].response_time,
+         metrics[i].wait_time,
+         metrics[i].turnaround_time
+      );
+   }
+}
+
+
+proc_metrics_s proc_get_metrics(PROC_ proc)
+{
+   assert(PROC_COMPLETE(proc) || PROC_EXIT(proc));
+   proc_metrics_s m;
+   m.pid = proc->pid;
+   m.turnaround_time = proc->last_exec - proc->arrival_time;
+   m.response_time = proc->first_exec - proc->arrival_time;
+   m.wait_time = m.turnaround_time - proc->cpu_total;
+   return m;
+}
+
