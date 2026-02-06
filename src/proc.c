@@ -32,13 +32,13 @@ void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority)
    static pcg32_random_t rng;
 
    if (pid_counter == 1)
-      pcg32_srandom_r(&rng, (uint64_t)time(nullptr), (uint64_t)clock());
+      pcg32_srandom_r(&rng, (uint64_t)time(NULL), (uint64_t)clock());
 
 
    assert(proc);
    assert(timer);
 
-   const ms_delta_s cpu_time = 
+   const ms_delta_s cpu_time =
       ((ms_delta_s)pcg32_boundedrand_r(&rng, (1ul << 27)) + (1ul << 3));
       // | ((ms_delta_s)pcg32_boundedrand_r(&rng, (1ul << 9)) << 32);
 
@@ -52,7 +52,7 @@ void proc_init(PROC_ proc, MS_TIMER_ timer, const priority_e priority)
       .priority = priority,
       .pid = pid_counter,
       .cpu_total = cpu_time,
-      .arrival_time = *timer,   
+      .arrival_time = *timer,
    };
 
 
@@ -90,16 +90,16 @@ ms_delta_s proc_run(PROC_ proc, MS_TIMER_ timer, const ms_delta_s quantum)
 void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
 {
    fprintf(
-      logstream, 
+      logstream,
       "timer: %12" PRImst "\t"
       "pid: %4u\t"
       " [%s] "
       "cpu_remaining: %10" PRImsd "\t"
-      "status: %s\n", 
-      *timer, 
-      proc->pid, 
-      priority_desc[proc->priority], 
-      proc->cpu_remaining, 
+      "status: %s\n",
+      *timer,
+      proc->pid,
+      priority_desc[proc->priority],
+      proc->cpu_remaining,
       proc_state_desc[proc->state]
    );
 }
@@ -107,7 +107,7 @@ void proc_snapshot(const PROC_ proc, MS_TIMER_ timer)
 void proc_display(const PROC_ proc, const proc_metrics_s metrics)
 {
    fprintf(
-      logstream, 
+      logstream,
       "\nProcess (pid:%u)\n"
       IND "priority: %s\n"
       IND "Status  : %s\n"
@@ -118,8 +118,8 @@ void proc_display(const PROC_ proc, const proc_metrics_s metrics)
       IND2 "Turnaround time: %10" PRImsd "\n"
       IND "Start time:  %10" PRImsd "\n"
       IND "Finish time: %10" PRImsd "\n",
-      proc->pid, 
-      priority_desc[proc->priority], 
+      proc->pid,
+      priority_desc[proc->priority],
       proc_state_desc[proc->state],
       proc->cpu_total,
       metrics.response_time,
@@ -171,4 +171,3 @@ proc_metrics_s proc_get_metrics(PROC_ proc)
    m.wait_time = m.turnaround_time - proc->cpu_total;
    return m;
 }
-

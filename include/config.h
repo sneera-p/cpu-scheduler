@@ -4,14 +4,19 @@
 #include <stdint.h>
 #include "utils/xmacro.h"
 
+#ifdef _MSC_VER
+   #include <stdbool.h>
+   #include <stdalign.h>
+   #include <assert.h>
+#endif
 
 /* --- TIME SETTINGS (ms) --- */
 
 // time per queue in the short-term scheduler before swapping
-#define TIME_QUANTUM 20'000
+#define TIME_QUANTUM 20000
 
 // time per process in Q0 (Round Robin) before swapping
-#define Q0_TIME_QUANTUM 1'250 
+#define Q0_TIME_QUANTUM 1250
 
 // Estimated overhead time to create & initialize a new process
 #define TIME_PROC_INIT 200
@@ -38,7 +43,7 @@
 
 enum proc_state : uint8_t
 {
-   PROC_STATE(X_ENUM) 
+   PROC_STATE(X_ENUM)
    N_PROC_STATE
 };
 
@@ -54,8 +59,8 @@ extern const char *proc_state_desc[N_PROC_STATE];
    x(FIFO)
 
 enum proc_algo : uint8_t
-{ 
-   PROC_ALGO(X_ENUM) 
+{
+   PROC_ALGO(X_ENUM)
    N_PROC_ALGO
 };
 
@@ -73,9 +78,9 @@ extern const bool proc_algo_queue_mode[N_PROC_ALGO];
    x(Q3) /* FIFO */
 
 enum priority : uint8_t
-{ 
-   PRIORITY(X_ENUM) 
-   N_PRIORITY 
+{
+   PRIORITY(X_ENUM)
+   N_PRIORITY
 };
 
 typedef enum priority priority_e;

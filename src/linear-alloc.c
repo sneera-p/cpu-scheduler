@@ -11,7 +11,7 @@ linear_alloc_s *linear_alloc_create(const size_t size)
    if (!alloc)
    {
       puts("Error: linear allocator failed to initialise");
-      return nullptr;
+      return NULL;
    }
 
    *alloc = (linear_alloc_s) {
@@ -47,7 +47,7 @@ void *linear_alloc(LINEAR_ALLOC_ alloc, const size_t align, const size_t size)
    const size_t offset = (size_t)(cur - alloc->buffer) + size;
 
    if (offset > alloc->size)
-      return nullptr;
+      return NULL;
 
    alloc->offset = offset;
    return (void*)cur;

@@ -12,7 +12,7 @@
 #include "linear-alloc.h"
 #include "scheduler.h"
 
-FILE *logstream = nullptr;
+FILE *logstream = NULL;
 
 const char *proc_state_desc[N_PROC_STATE] = {
    PROC_STATE(X_DESC)
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
    LINEAR_ALLOC_ allocator = linear_alloc_create(__mem_size(len));
    if (!allocator)
-      exit(EXIT_FAILURE);  
+      exit(EXIT_FAILURE);
 
    ms_timer_s timer = 1;
    SCHEDULER_ scheduler = linear_alloc(allocator, alignof(scheduler_s), sizeof(scheduler_s) + len * sizeof(proc_s));
