@@ -1,11 +1,33 @@
 #include <assert.h>
-#include <stdbit.h>
+// #include <stdbit.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
 #include "input.h"
 #include "linear-alloc.h"
 #include "scheduler.h"
+
+/*
+ * Quick Fix for MVSC(windows) not supporting <stdbit.h> yet...
+ * Remove this and uncomment line #2 (#include <stdbit.h>) after support arrives
+ */
+#ifdef _MSC_VER
+   #include <intrin.h>
+   #include <stdint.h>
+   // MSVC doesn't have stdbit.h yet, so we define the C23 function manually
+   static inline int stdc_first_trailing_one_ui(unsigned int value) {
+      if (value == 0) return 0; // C23 spec: return 0 if no bits are set
+      unsigned long index;
+      // _BitScanForward finds the first set bit (1) from LSB to MSB
+      _BitScanForward(&index, (unsigned long)value);
+      return (int)(index + 1); // C23 uses 1-based indexing for "first" functions
+   }
+
+   // Alias it to the generic name if you want to keep your code clean
+   #define stdc_first_trailing_one(x) stdc_first_trailing_one_ui(x)
+#else
+   #include <stdbit.h>
+#endif
 
 
 void scheduler_init(SCHEDULER_ scheduler, LINEAR_ALLOC_ allocator, const size_t nproc, MS_TIMER_ timer)
@@ -28,7 +50,7 @@ void scheduler_init(SCHEDULER_ scheduler, LINEAR_ALLOC_ allocator, const size_t 
    {
       char buf[64];
       snprintf(buf, sizeof(buf), IND "Process (pid:%zu): ", i);
-      
+
       const priority_e p = input_priority_stdin(buf);
       if (p >= N_PRIORITY)
          exit(EXIT_FAILURE);
@@ -42,7 +64,7 @@ void scheduler_init(SCHEDULER_ scheduler, LINEAR_ALLOC_ allocator, const size_t 
 
    #undef _procs_
    #undef _queues_
-   
+
    scheduler->nproc = nproc;
 }
 
@@ -75,8 +97,8 @@ void scheduler_exit(SCHEDULER_ scheduler)
 
 [[nodiscard]] static inline priority_e _scheduler_next(const uint64_t mask, const priority_e cur) [[unsequenced]]
 {
-   if (mask == 0) 
-      return cur; 
+   if (mask == 0)
+      return cur;
 
    typeof(cur) next = (cur + 1) % N_PRIORITY;
    uint64_t higher_bits = mask & (~0ull << next);
@@ -104,7 +126,7 @@ void scheduler_run(SCHEDULER_ scheduler, MS_TIMER_ timer)
 
       if (queue_mask == 0)
          break;
-      
+
       i = _scheduler_next(queue_mask, i);
    }
 }
